@@ -26,6 +26,8 @@ export class PlayScene extends GameScene {
   gameSpeedModifier: number = 1;
 
   progressSound: Phaser.Sound.HTML5AudioSound;
+  startButton: Phaser.GameObjects.Text;
+  StartGameContainer: Phaser.GameObjects.Container;
 
   constructor() {
     super("PlayScene");
@@ -36,11 +38,13 @@ export class PlayScene extends GameScene {
     this.createPlayer();
     this.createObstacles();
     this.createGameoverContainer();
-    // this.createAnimations();
     this.createScore();
+
     this.handleGameStart();
     this.handleObstacleCollisions();
     this.handleGameRestart();
+
+    this.createStartGameButton();
 
     this.progressSound = this.sound.add("progress", {
       volume: 0.2,
@@ -210,6 +214,99 @@ export class PlayScene extends GameScene {
       .setAlpha(0);
   }
 
+  createStartGameButton() {
+    const buttonWidth = 220;
+    const buttonHeight = 60;
+    const borderRadius = 12;
+    
+    // Create a rounded background using graphics
+    const buttonBg = this.add.graphics();
+    buttonBg.fillStyle(0x000000, 0.4);
+    buttonBg.fillRoundedRect(
+      -buttonWidth / 2,
+      -buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      borderRadius
+    );
+    buttonBg.lineStyle(5, 0xffffff);
+    buttonBg.strokeRoundedRect(
+      -buttonWidth / 2,
+      -buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      borderRadius
+    );
+
+    // Create the text
+    this.startButton = this.add
+      .text(0, 0, "Start Game", {
+        fontSize: "28px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    // Hover effects
+    this.startButton.on("pointerover", () => {
+      buttonBg.clear();
+      buttonBg.fillStyle(0x000000, 0.5);
+      buttonBg.fillRoundedRect(
+        -buttonWidth / 2,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        borderRadius
+      );
+      buttonBg.lineStyle(2, 0x00ffcc);
+      buttonBg.strokeRoundedRect(
+        -buttonWidth / 2,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        borderRadius
+      );
+    });
+
+    this.startButton.on("pointerout", () => {
+      buttonBg.clear();
+      buttonBg.fillStyle(0x000000, 0.4);
+      buttonBg.fillRoundedRect(
+        -buttonWidth / 2,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        borderRadius
+      );
+      buttonBg.lineStyle(2, 0xffffff);
+      buttonBg.strokeRoundedRect(
+        -buttonWidth / 2,
+        -buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        borderRadius
+      );
+    });
+
+    // Container
+    this.StartGameContainer = this.add
+      .container(this.gameWidth / 2, this.gameHeight / 2 - 50)
+      .add([buttonBg, this.startButton])
+      .setAlpha(1);
+
+    // Click logic
+    this.startButton.on("pointerdown", () => {
+      const sound = this.sound;
+      if ("context" in sound && sound.context.state === "suspended") {
+        sound.context.resume();
+      }
+
+      this.StartGameContainer.setAlpha(0);
+      this.isGameRunning = true;
+    });
+  }
+
   createAnimations() {
     this.anims.create({
       key: "enemy-bird-fly",
@@ -272,7 +369,7 @@ export class PlayScene extends GameScene {
             this.player.setVelocityX(0);
             this.clouds.setAlpha(1);
             this.scoreText.setAlpha(1);
-            this.isGameRunning = true;
+            this.isGameRunning = false;
           }
         },
       });
@@ -314,6 +411,7 @@ export class PlayScene extends GameScene {
 
       this.obstacles.clear(true, true);
       this.gameOverContainer.setAlpha(0);
+      this.startButton.disableInteractive();
       this.anims.resumeAll();
 
       this.isGameRunning = true;

@@ -2,24 +2,56 @@ import { Scene } from "phaser";
 import { PRELOAD_CONFIG } from "../main";
 
 export class Preloader extends Scene {
+  bar: Phaser.GameObjects.Rectangle;
   constructor() {
     super("Preloader");
   }
 
   init() {
-    //  We loaded this image in our Boot Scene, so we can display it here
-    this.add.image(512, 384, "background");
+    const centerX = this.scale.width / 2;
+    const centerY = this.scale.height / 2;
 
-    //  A simple progress bar. This is the outline of the bar.
-    this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
+    const barWidth = 468;
 
-    //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-    const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
+    // Optional: background fill matching game size
+    this.add.rectangle(
+      centerX,
+      centerY,
+      this.scale.width,
+      this.scale.height,
+      0x000000
+    );
 
-    //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-    this.load.on("progress", (progress: number) => {
-      //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-      bar.width = 4 + 460 * progress;
+    // Outer border of Red loading bar
+    this.add
+      .rectangle(centerX, centerY, barWidth, 32)
+      .setStrokeStyle(2, 0xffffff);
+
+    // Red loading bar
+    this.bar = this.add
+      .rectangle(centerX - barWidth / 2, centerY, 4, 28, 0xff0000)
+      .setOrigin(0.1, 0.5); // > this is starter base, but will stretch if u increment the width
+
+    let progressCallCount = 0;
+
+    this.add
+      .text(centerX, centerY - 40  , "Dino Run", {
+        fontSize: "32px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+      })
+      .setOrigin(0.5, 0.5); // ax bx cx 
+
+    //  > Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
+    this.load.on("progress", async (progress: number) => {
+      progressCallCount++;
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          // > you can consider progress same as each success 200 loaded assets
+          this.bar.width = barWidth * progress;
+          resolve();
+        }, 100 * progressCallCount);
+      });
     });
   }
 
@@ -85,6 +117,51 @@ export class Preloader extends Scene {
     });
 
     //  > Move to the PlayScene. You could also swap this for a Scene Transition, such as a camera fade.
-    this.scene.start("PlayScene");
+    this.time.delayedCall(500, () => {
+      console.log("Fake load complete");
+      this.scene.start("PlayScene");
+    });
+
+    // this.scene.start("PlayScene");
   }
 }
+
+// @ notes about setOrigin:
+
+//    +-----------------------------+  ← GameObject bounds (e.g. text box)
+//    |                             |
+//    |       "Dino Run"            |
+//    |                             |
+//    +-----------------------------+
+
+//    Origin points (x, y):
+
+
+
+//     ax bx cx
+//     ay by cy
+//     az bz cz
+
+//    (0, 0)       (0.5, 0)         (1, 0)
+//    ┌──────────┬──────────────┬──────────────┐
+//    │ Top-Left │  Top-Center  │  Top-Right   │
+//    └──────────┴──────────────┴──────────────┘
+
+//    (0, 0.5)     (0.5, 0.5)       (1, 0.5)
+//    ┌──────────┬──────────────┬──────────────┐
+//    │ Mid-Left │   CENTER     │ Mid-Right    │
+//    └──────────┴──────────────┴──────────────┘
+
+//     (0, 1)       (0.5, 1)         (1, 1)
+//    ┌──────────┬──────────────┬──────────────┐
+//    │Bot-Left  │ Bottom-Center│  Bot-Right   │
+//    └──────────┴──────────────┴──────────────┘
+
+// example:
+
+// this.add.rectangle(100, 40, 50, 20, 0xff0000).setOrigin(0, 0);
+// Width = 50, Height = 20
+
+// setOrigin(0, 0) → anchor is top-left
+// It will draw from (100, 40) → growing right and down.
+// So bottom-right corner ends at (150, 60)
