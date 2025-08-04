@@ -89,11 +89,9 @@ export class PlayScene extends GameScene {
     Phaser.Actions.IncX(this.clouds.getChildren(), -0.5);
 
     const score = Array.from(String(this.score), Number);
-
     for (let i = 0; i < 5 - String(this.score).length; i++) {
       score.unshift(0);
     }
-
     this.scoreText.setText(score.join(""));
 
     // > technique remove object because have spawn logic in spawnInterval
@@ -114,7 +112,7 @@ export class PlayScene extends GameScene {
       }
     );
 
-    // > this run the ground
+    // > this run the ground 
     this.ground.tilePositionX += this.gameSpeed * this.gameSpeedModifier;
   }
 
